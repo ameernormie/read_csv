@@ -1,0 +1,6 @@
+/dist
+/node_modules
+/package-lock.json
+data.csv
+data2.json
+formatted.csv
