@@ -1,6 +1,7 @@
 import download from "download";
 import * as fs from "fs";
-import { parse, parseFile } from "fast-csv";
+import { parseFile } from "fast-csv";
+import csvToJson from "csvtojson";
 
 const CSV_PATH =
   "https://gist.githubusercontent.com/bobbae/b4eec5b5cb0263e7e3e63a6806d045f2/raw/279b794a834a62dc108fc843a72c94c49361b501/data.csv";
@@ -27,6 +28,11 @@ async function all() {
 
   const jsonObject = {};
   let validRows = 0;
+  const maxRows = {
+    maxIds: [],
+    maxProfits: [],
+    rows: [],
+  };
 
   const writeStream = fs.createWriteStream("formatted.csv", {
     flags: "a",
@@ -66,6 +72,24 @@ async function all() {
         })
         .on("end", async (rowCount) => {
           console.log(`TOTAL VALID PROFIT ROWS: ${validRows}`);
+          const jsonArray = await csvToJson().fromFile("formatted.csv");
+          const sortedJsonArray = jsonArray.sort(function compare(a, b) {
+            if (Number(a.Profit) > Number(b.Profit)) {
+              return -1;
+            }
+            if (Number(a.Profit) < Number(b.Profit)) {
+              return 1;
+            }
+            return 0;
+          });
+
+          const topTwenty = [];
+          sortedJsonArray.forEach((value, index) => {
+            if (index < 20) {
+              topTwenty.push(value);
+            }
+          });
+          console.log("TOP TWENTY HIGHEST PROFIT ROWS ", topTwenty);
           parseFile("formatted.csv")
             .on("error", (error) => console.error(error))
             .on("data", (row) => {
@@ -79,14 +103,45 @@ async function all() {
               }
             })
             .on("end", async (rowCount) => {
-              console.log("jsonObject ", jsonObject);
               data2JsonWriteStream.write(JSON.stringify(jsonObject));
-              console.log(
-                `Valid rows after removing non numrical profit: ${validRows}`
-              );
             });
         });
     });
 }
 
 all();
+
+const w = [
+  {
+    ID: "96",
+    Year: "1955",
+    Rank: "96",
+    Company: "Amstar",
+    Revenue: "308.8",
+    Profit: "7.6",
+  },
+  {
+    ID: "97",
+    Year: "1955",
+    Rank: "97",
+    Company: "Reynolds Metals",
+    Revenue: "306.8",
+    Profit: "20.3",
+  },
+  {
+    ID: "98",
+    Year: "1955",
+    Rank: "98",
+    Company: "Morrell (John)",
+    Revenue: "306.5",
+    Profit: "0.5",
+  },
+  {
+    ID: "99",
+    Year: "1955",
+    Rank: "99",
+    Company: "BP America",
+    Revenue: "304.4",
+    Profit: "18.5",
+  },
+];
